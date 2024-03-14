@@ -2,21 +2,14 @@ package com.wy.wytrace;
 
 import android.content.Context;
 import android.os.Bundle;
-import android.os.Process;
 import android.os.SystemClock;
 
 import androidx.appcompat.app.AppCompatActivity;
-
-import com.wy.lib.wytrace.ArtMethodTrace;
-import com.wy.lib.wytrace.ArtTraceHelper;
 
 public class MainActivity extends AppCompatActivity {
     @Override
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(newBase);
-        ArtTraceHelper.useExecuteSwitchImplAsm(this);
-        ArtMethodTrace.methodHookStart("com.wy.wytrace.MainActivity.onCreate", Process.myTid(),3,true);
-
     }
 
     @Override
@@ -29,7 +22,7 @@ public class MainActivity extends AppCompatActivity {
         test();
     }
 
-    public void test(){
+    public void test() {
         SystemClock.sleep(100);
 
     }

@@ -33,9 +33,12 @@ public:
     }
 
     static bool Init(void *handler) {
-        return !(ArtMethod::PrettyMethodSym = reinterpret_cast<ArtMethod::PrettyMethodType>(shadowhook_dlsym(handler, "_ZN3art9ArtMethod12PrettyMethodEPS0_b"))) &&
-               !(ArtMethod::PrettyMethodSym = reinterpret_cast<ArtMethod::PrettyMethodType>(shadowhook_dlsym(handler, "_ZN3art12PrettyMethodEPNS_9ArtMethodEb"))) &&
-               !(ArtMethod::PrettyMethodSym = reinterpret_cast<ArtMethod::PrettyMethodType>(shadowhook_dlsym(handler, "_ZN3art12PrettyMethodEPNS_6mirror9ArtMethodEb")));
+        return !(ArtMethod::PrettyMethodSym = reinterpret_cast<ArtMethod::PrettyMethodType>(shadowhook_dlsym(
+                handler, "_ZN3art9ArtMethod12PrettyMethodEPS0_b"))) &&
+               !(ArtMethod::PrettyMethodSym = reinterpret_cast<ArtMethod::PrettyMethodType>(shadowhook_dlsym(
+                       handler, "_ZN3art12PrettyMethodEPNS_9ArtMethodEb"))) &&
+               !(ArtMethod::PrettyMethodSym = reinterpret_cast<ArtMethod::PrettyMethodType>(shadowhook_dlsym(
+                       handler, "_ZN3art12PrettyMethodEPNS_6mirror9ArtMethodEb")));
     }
 
 private:
@@ -52,7 +55,8 @@ void *(*ATrace_beginSection)(const char *sectionName);
 void *(*ATrace_endSection)(void);
 
 
-void method_before(ArtMethod *artMethod, bool &trace, long &start, std::string &method, timeval &tv);
+void
+method_before(ArtMethod *artMethod, bool &trace, long &start, std::string &method, timeval &tv);
 
 void method_after(bool trace, long start, const std::string &method, timeval &tv);
 
@@ -87,7 +91,8 @@ static int filter_depth = 10;
 static bool filter_debug = false;
 
 
-void method_before(ArtMethod *artMethod, bool &trace, long &start, std::string &method, timeval &tv) {
+void
+method_before(ArtMethod *artMethod, bool &trace, long &start, std::string &method, timeval &tv) {
     trace = false;
     start = 0l;
     method = "";//    0 == gettimeofday(&tv, nullptr) && (tv.tv_sec * 1000 + tv.tv_usec / 1000) % 100 >= 0
@@ -160,14 +165,14 @@ bool hook_success;
 
 void do_hook() {
     void *handler = shadowhook_dlopen("libart.so");
-    if(handler == nullptr){
+    if (handler == nullptr) {
         LOGE("hook error  dlopen libart failed");
         return;
     }
     ArtMethod::Init(handler);
     shadowhook_dlclose(handler);
     void *libandroid = shadowhook_dlopen("libandroid.so");
-    if(libandroid == nullptr){
+    if (libandroid == nullptr) {
         LOGE("hook error  dlopen libandroid failed");
         return;
     }
@@ -198,12 +203,53 @@ void do_hook() {
 
 }
 
+void *useNterp_orig = nullptr;
+void *useNterp_stup = nullptr;
+
+bool useNterp() {
+    return false;
+}
+
+void **instance_;
+
+template<typename T>
+int findOffset(void *start, int regionStart, int regionEnd, T value) {
+
+    if (NULL == start || regionEnd <= 0 || regionStart < 0) {
+        return -1;
+    }
+    char *c_start = (char *) start;
+
+    for (int i = regionStart; i < regionEnd; i += 4) {
+        T *current_value = (T *) (c_start + i);
+        if (value == *current_value) {
+            return i;
+        }
+    }
+    return -2;
+}
+
 extern "C" {
+
+JNIEXPORT  void JNICALL
+Java_com_wy_lib_wytrace_ArtMethodTrace_disableNterp(JNIEnv *env,
+                                                    jclass clazz) {
+    useNterp_stup = shadowhook_hook_sym_name(
+            "libart.so",
+            "_ZN3art11interpreter18CanRuntimeUseNterpEv",
+            (void *) useNterp,
+            (void **) &useNterp_orig);
+    if (useNterp_stup != nullptr) {
+        LOGE("disableNterp success ");
+    }
+
+}
 
 
 JNIEXPORT  void JNICALL
 Java_com_wy_lib_wytrace_ArtMethodTrace_methodHook(JNIEnv *env,
-                                                                jclass clazz, jstring methodName, jint tid, jint depth, jboolean debug) {
+                                                  jclass clazz, jstring methodName, jint tid,
+                                                  jint depth, jboolean debug) {
     filter_tid = tid;
     filter_depth = depth;
     filter_debug = debug;
@@ -216,7 +262,7 @@ Java_com_wy_lib_wytrace_ArtMethodTrace_methodHook(JNIEnv *env,
 
 
 JNIEXPORT  void JNICALL
-Java_com_wy_lib_wytrace_ArtMethodTrace_methodUnHook(JNIEnv *env,jclass clazz) {
+Java_com_wy_lib_wytrace_ArtMethodTrace_methodUnHook(JNIEnv *env, jclass clazz) {
     if (!hook_success) {
         return;
     }
@@ -230,6 +276,46 @@ Java_com_wy_lib_wytrace_ArtMethodTrace_methodUnHook(JNIEnv *env,jclass clazz) {
         LOGE("unhook executeMterpImpl_stub %d ", err2);
         hook_success = false;
     }
+
+}
+
+JNIEXPORT  void JNICALL
+Java_com_wy_lib_wytrace_ArtMethodTrace_bootImageNterp(JNIEnv *env,
+                                                      jclass clazz) {
+    void *handler = shadowhook_dlopen("libart.so");
+    instance_ = static_cast<void **>(shadowhook_dlsym(handler, "_ZN3art7Runtime9instance_E"));
+    jobject
+    (*getSystemThreadGroup)(void *runtime) =(jobject (*)(void *runtime)) shadowhook_dlsym(handler,
+                                                                                          "_ZNK3art7Runtime20GetSystemThreadGroupEv");
+    void
+    (*UpdateEntrypointsForDebuggable)(void *instrumentation) = (void (*)(void *i)) shadowhook_dlsym(
+            handler,
+            "_ZN3art15instrumentation15Instrumentation30UpdateEntrypointsForDebuggableEv");
+    if (getSystemThreadGroup == nullptr || UpdateEntrypointsForDebuggable == nullptr) {
+        LOGE("getSystemThreadGroup  failed ");
+        shadowhook_dlclose(handler);
+        return;
+    }
+    jobject thread_group = getSystemThreadGroup(*instance_);
+    int vm_offset = findOffset(*instance_, 0, 4000, thread_group);
+    if (vm_offset < 0) {
+        LOGE("vm_offset not found ");
+        shadowhook_dlclose(handler);
+        return;
+    }
+    void (*setRuntimeDebugState)(void *instance_, int r) =(void (*)(void *runtime,
+                                                                    int r)) shadowhook_dlsym(
+            handler, "_ZN3art7Runtime20SetRuntimeDebugStateENS0_17RuntimeDebugStateE");
+    if (setRuntimeDebugState != nullptr) {
+        setRuntimeDebugState(*instance_, 0);
+    }
+    void *instrumentation = reinterpret_cast<void *>(reinterpret_cast<char *>(*instance_) +
+                                                     vm_offset - 368 );
+
+    UpdateEntrypointsForDebuggable(instrumentation);
+    setRuntimeDebugState(*instance_, 2);
+    shadowhook_dlclose(handler);
+    LOGE("bootImageNterp success");
 
 }
 

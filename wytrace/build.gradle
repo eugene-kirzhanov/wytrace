@@ -73,5 +73,5 @@ publishing {
 
 
 dependencies {
-    api 'com.bytedance.android:shadowhook:1.0.7'
+    api 'com.bytedance.android:shadowhook:1.0.9'
 }

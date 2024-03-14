@@ -3,7 +3,8 @@
 后面我用他来代替systrace使用了。
 支持环境
 Android 9 ～ Android 14 debug包
-Android 13已经默认切到Nterp了，13后需要切到switch解释执行才能监控到. 这边利用jvmti切换。
+Android 13已经默认切到Nterp了，13后需要切到switch解释执行才能监控到. 这边hook art::interpreter::CanRuntimeUseNterp()让方法走switch执行
+Android 14 debugable包默认解释执行 bootImage方法也用的解释执行，这会导致debugable包变的卡顿，这边利用art::instrumentation::Instrumentation::UpdateEntrypointsForDebuggable() 临时解决
 
 ### 背景
 排查一个方法耗时时，经常需要在内部打印各种时间戳,比如排查下面onCreate方法耗时
@@ -61,8 +62,6 @@ public static void methodHookStart(String methodName, int tid, int depth, boolea
 ```
 ### 示例
 ```java
-        //android 13以上加入下面一行
-        ArtTraceHelper.useExecuteSwitchImplAsm(this);
         ArtMethodTrace.methodHookStart("com.wy.wytrace.MainActivity.onCreate", Process.myTid(),3,true);
 
 ```
