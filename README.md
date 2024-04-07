@@ -42,8 +42,8 @@ android {
 }
 
 dependencies {
-    implementation 'com.bytedance.android:shadowhook:1.0.7'
-    implementation 'com.github.wuyouuuu:wytrace:1.0.0'
+    implementation 'com.bytedance.android:shadowhook:1.0.9'
+    implementation 'com.github.wuyouuuu:wytrace:1.0.1'
 }
 ```
 

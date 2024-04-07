@@ -54,7 +54,7 @@ publishing {
         aar(MavenPublication) {
             groupId 'com.wy.lib'
             artifactId 'wytrace'
-            version '1.0.0'
+            version '1.0.1'
             // 打包 aar 文件
             artifact("$buildDir/outputs/aar/wytrace-release.aar")
         }
