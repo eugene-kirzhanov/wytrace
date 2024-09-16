@@ -21,26 +21,6 @@ public class ArtMethodTrace {
                 .build());
     }
 
-    /**
-     * @param methodName 方法名
-     * @param tid        需要抓取trace线程tid   -1表示抓取全部线程
-     * @param depth      方法内部抓取层级
-     * @param debug      是否打印方法耗时日志
-     */
-
-    public static void methodHookStart(String methodName, int tid, int depth, boolean debug) {
-        if (Build.VERSION.SDK_INT == 33) {
-            disableNterp();
-        }
-        methodHook(methodName, tid, depth, debug);
-    }
-
-    private static native void methodHook(String methodName, int tid, int depth, boolean debug);
-
-    public static native void methodUnHook();
-
-    public static native void disableNterp();
-
     public static void fix14debugApp(Context context) {
         if (Build.VERSION.SDK_INT == 34 && (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
             bootImageNterp();
