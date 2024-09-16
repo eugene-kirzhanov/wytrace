@@ -1,3 +1,16 @@
+Fork of https://github.com/wuyouuuu/wytrace repository
+
+Updates:
+- cleaned up, for example, removed launcher icon
+- updated dependencies
+
+Simple how-to:
+- compile library as AAR
+- add it to your project (google how to add AAR library)
+- call ArtMethodTrace.fix14debugApp(this) in your Application.onCreate()
+
+================
+
 ### 介绍
 起初这是一个android 平台排查方法耗时的库
 后面我用他来代替systrace使用了。
@@ -10,14 +23,14 @@ Android 14 debugable包默认解释执行 bootImage方法也用的解释执行�
 排查一个方法耗时时，经常需要在内部打印各种时间戳,比如排查下面onCreate方法耗时
 ```java
    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        //步骤1
-        super.onCreate(savedInstanceState);
-        //步骤2
-        setContentView(R.layout.activity_main);
-        //步骤3
-        test();
-    }
+protected void onCreate(Bundle savedInstanceState) {
+    //步骤1
+    super.onCreate(savedInstanceState);
+    //步骤2
+    setContentView(R.layout.activity_main);
+    //步骤3
+    test();
+}
 
 ```
 ### wytrace
@@ -79,7 +92,7 @@ public static void methodHookStart(String methodName, int tid, int depth, boolea
 2023-06-26 18:26:39.486 18782-18782/com.wy.wytrace E/wytrace: 2, com.wy.wytrace.MainActivity.test 100 ms
 2023-06-26 18:26:39.486 18782-18782/com.wy.wytrace E/wytrace: 1, com.wy.wytrace.MainActivity.onCreate 226 ms
 ```
-使用perfetto 
+使用perfetto
 ```shell
 cd wytrace
 chmod 777 record_android_trace.py
